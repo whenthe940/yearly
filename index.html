@@ -48,6 +48,11 @@
             color: white;
             display: none;
         }
+        #new {
+            background-color: #2196F3;
+            color: white;
+            display: none;
+        }
         #countdown {
             margin-top: 20px;
             font-size: 18px;
@@ -66,6 +71,7 @@
         <button id="submit">Submit</button>
         <div id="countdown"></div>
         <button id="show">Show</button>
+        <button id="new">Write a New One</button>
         <div id="result"></div>
     </div>
 
@@ -74,20 +80,22 @@
         const submitButton = document.getElementById('submit');
         const countdownDiv = document.getElementById('countdown');
         const showButton = document.getElementById('show');
+        const newButton = document.getElementById('new');
         const resultDiv = document.getElementById('result');
 
         let countdownTimer;
-        let countdown = 5; // 5 seconds countdown
+        let endDate;
 
         // Load saved data from localStorage
         const savedText = localStorage.getItem('savedText');
+        const savedEndDate = localStorage.getItem('endDate');
         const savedState = localStorage.getItem('savedState');
 
-        if (savedText && savedState === 'submitted') {
+        if (savedText && savedEndDate && savedState === 'submitted') {
+            endDate = new Date(savedEndDate);
             bobbyInput.style.display = 'none';
             submitButton.style.display = 'none';
-            countdownDiv.textContent = 'Countdown complete!';
-            showButton.style.display = 'inline-block';
+            startCountdown();
         } else if (savedText) {
             bobbyInput.value = savedText;
         }
@@ -99,22 +107,16 @@
                 return;
             }
 
+            endDate = new Date();
+            endDate.setFullYear(endDate.getFullYear() + 1); // Set to 1 year from now
+
             localStorage.setItem('savedText', inputValue); // Save the input text
+            localStorage.setItem('endDate', endDate.toISOString()); // Save the end date
             localStorage.setItem('savedState', 'submitted');
             bobbyInput.style.display = 'none'; // Hide input field
             submitButton.style.display = 'none'; // Hide submit button
 
-            countdownDiv.textContent = `Countdown: ${countdown} seconds`;
-
-            countdownTimer = setInterval(() => {
-                countdown--;
-                countdownDiv.textContent = `Countdown: ${countdown} seconds`;
-                if (countdown === 0) {
-                    clearInterval(countdownTimer);
-                    countdownDiv.textContent = 'Countdown complete!';
-                    showButton.style.display = 'inline-block';
-                }
-            }, 1000);
+            startCountdown();
         });
 
         showButton.addEventListener('click', () => {
@@ -122,6 +124,42 @@
             resultDiv.textContent = `You wrote: "${savedText}"`;
             showButton.style.display = 'none';
         });
+
+        newButton.addEventListener('click', () => {
+            localStorage.removeItem('savedText'); // Clear the saved text
+            localStorage.removeItem('endDate'); // Clear the end date
+            localStorage.removeItem('savedState'); // Reset the state
+            bobbyInput.style.display = 'block'; // Show the input field
+            submitButton.style.display = 'inline-block'; // Show submit button
+            countdownDiv.textContent = ''; // Clear countdown text
+            resultDiv.textContent = ''; // Clear result text
+            showButton.style.display = 'none'; // Hide show button
+            newButton.style.display = 'none'; // Hide new button
+            bobbyInput.value = ''; // Clear the input field
+        });
+
+        function startCountdown() {
+            const updateCountdown = () => {
+                const now = new Date();
+                const timeLeft = endDate - now;
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdownTimer);
+                    countdownDiv.textContent = 'Countdown complete!';
+                    showButton.style.display = 'inline-block';
+                    newButton.style.display = 'inline-block';
+                } else {
+                    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                    countdownDiv.textContent = `Countdown: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+                }
+            };
+
+            updateCountdown(); // Call immediately to show the initial countdown
+            countdownTimer = setInterval(updateCountdown, 1000); // Update every second
+        }
     </script>
 </body>
 </html>
